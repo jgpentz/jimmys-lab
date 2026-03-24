@@ -35,14 +35,14 @@ const components = {
         href={props.href}
         target="_blank"
         rel="noreferrer"
-        className="text-[var(--color-accent)] underline decoration-[var(--color-border-strong)] underline-offset-4"
+        className="mdx-external-link"
       >
         {props.children}
       </a>
     ) : (
       <Link
         href={props.href ?? "#"}
-        className="text-[var(--color-accent)] underline decoration-[var(--color-border-strong)] underline-offset-4"
+        className="mdx-external-link"
       >
         {props.children}
       </Link>

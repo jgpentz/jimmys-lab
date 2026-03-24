@@ -1,0 +1,239 @@
+---
+title: "Building a Poor Man's Ixia: RFC 2544 Network Testing on Real Hardware"
+date: "2026-03-23"
+description: "Project that explores open-source network test automation against a Cisco Catalyst 3750"
+summary: "A project that explores an RFC2544-aligned validation workflow used to measure throughput ceilings, frame-loss thresholds, and latency under controlled traffic profiles."
+tags:
+  - Switch
+  - Benchmarking
+  - Automation
+links:
+  - label: "GitHub"
+    href: "https://github.com/jgpentz/switch-test-framework"
+  - label: "Test Report"
+    href: "/switch-test-framework/switch-test-report.html"
+---
+
+Commercial network test equipment, such as Ixia or Spirent, is much too expensive for the common tinkerer.
+I certainly don't have tens of thousands of dollars lying around. Yet, this are the industry standard,
+and I wanted to get familiar with what the workflow feels like when using these tools. Therefore,
+this project aims to answer a simple question: how much of that capability can be replicated with
+simple open source tooling.
+
+I found the answer to be quite a lot. 
+
+While searching for which tests to use as benchmarks, I came across 
+[RFC2544](https://www.ietf.org/rfc/rfc2544.txt), which describes a methodology for
+testing throughput, latency, frame loss, and back-to-back frames (congestion).
+This lab documents the design and implementation of a Python based network test
+framework that follows the RFC2544 standard, and also tests for switch functionality.
+Traffic is generated and analyzed by Ubuntu VMs running on a Dell Poweredge R430 under
+Proxmox. The results are collected, and an automated 
+[test report](/switch-test-framework/switch-test-report.html) is generated.
+
+## Problem / Goal
+
+Network engineering teams spend a lot of time validating two main things about their switches:
+
+**Performance:** does the switch forward traffic at the rates it claims? Under what conditions
+does that start to fall apart? 
+
+**Correctness:** is the switch capable of all of the functionality that is promised. Are VLANs
+actually isolated, does MAC learning work, etc..
+
+In order to perform this testing, companies spend big dollars on test equipment that can 
+be automated through an API and perform at fast line rates. The cost of that tooling is
+unfeasible to the common man.
+
+The goal here is to see how well we can perform similar testing, against real hardware,
+with only a couple of VMs.
+
+## Topology
+
+The lab consists of three Ubuntu 22.04 VMs on a Dell PowerEdge R430 running Proxmox, wired through a Cisco Catalyst 3750 as the Device Under Test (DUT).
+
+```
+orchestrator (10.0.0.10)
+    │
+    ├── SSH ──► traffic-generator (10.0.0.11 / 172.16.0.1)
+    │                   └── iperf3 client / Scapy sender
+    │                               │
+    │                           Gi1/0/5
+    │                               │
+    │                      Cisco Catalyst 3750 (DUT)
+    │                               │
+    │                           Gi1/0/6
+    │                               │
+    └── SSH ──► traffic-analyzer  (10.0.0.12 / 172.16.0.2)
+                        └── iperf3 server / Scapy capture
+```
+
+This topology consists of two networks, a **management network** (10.0.0.0/24) and a
+**traffic network** (172.16.0.0/24). Yeah, wasted address space, but who's watching.
+
+The management network carries SSH sessions and orchestration traffic between the VMs and is 
+also used to configure the switch. The traffic network carries all of the test traffic
+throuh the switch.
+
+The VMs use separate (isolated) virtual switches (aka Proxmox bridges) to physical
+NICs. A third NIC handled the management to the switch, and the orchestrator was able to
+talk to the other VMs through a virtual switch dedicated to the mangement plane.
+
+
+## Approach
+
+### iperf3
+
+When exploring open-source software traffic generators, I came across a few that looked promising.
+Cisco has a traffic generator called TRex, that runs on DPDK and can push line-rate traffic. This
+sounded alluring at first, but I didn't want to deal with the complexit of setting up DPDK and 
+potentially fighting NIC passthroughs.
+
+iperf3 installs in very little time, and most engineers (including myself) are already familiar
+with it. Now my VMs for generating and analyzing traffic are dead simple. It also reports
+data in a JSON format, which makes it easy to handle the data in Python without screen scraping.
+
+One concern with iperf3, is how close could I actually get it to push close to line-rate speed (1G).
+Without messing around with parallel streams too much, I was able to get pretty close to 1G speeds,
+landing around 970Mbps.
+
+iperf3 ended up being a great tool, and it allowed me to cover all of the RFC2544 benchmarks
+(throughput, latency, frame loss, back-to-back).
+
+### Scapy
+
+iperf3 takes care of the RFC2544 benchmarks, and Scapy deals with the functional testing.
+In order to deal with the layer 2 testing of the switch, I needed a Python library to
+craft Layer 2 frames. Scapy allows us to manipulate all of the fields in a Layer 2 header.
+
+With the control over the packet creation, I was able to test VLAN isolation, MAC learning, and 802.1Q
+tag handling.
+
+One issue I had to think through was, 'how do you craft the packets from the orchestrator, and
+tell the traffic generator to send them?' I ended up creating both the traffic generator and
+traffic analyzer scripts on the orchestrator, and then using SCP to copy them to the 
+respective VMs. Now the orchestrator only needed to SSH into the generator/analyzer,
+and run the python scripts through the CLI, passing in arguments to dictate which 
+packets to create
+
+
+## Implementation
+
+The test framework is structured as a Python package that has a few main components: 
+an iperf3 engine, a scapy engine, test logic, telemetry, and reporting.
+
+### Traffic Engines
+
+**IPerf3Engine** wraps the iperf3 CLI via subprocess. It supports TCP throughput tests, 
+UDP tests at fixed bitrates, and stepwise UDP sweeps across a list of bitrate targets. 
+All results are parsed from iperf3's native JSON output and returned as structured dicts. 
+The iperf3 server runs as a systemd service on the analyzer VM — always listening, 
+no manual intervention between tests.
+ 
+**ScapyEngine** is the orchestrator-side coordinator. It handles SCP deployment of the 
+send and capture scripts, SSH execution on the remote VMs, and result collection. 
+Two remote scripts do the actual work: `scapy_send.py` on the generator and 
+`scapy_capture.py` on the analyzer, both accepting parameters via CLI arguments.
+
+### RFC2544 Tests
+
+**Throughput** uses a binary search algorithm, starting at 50% of link capacity. 
+Simply put, it raises the rate if no loss is detected, and lowers it if there 
+is loss detected, and stops when there is no loss detected. It performs this 
+algorithm for each of the defined frame sizes defined in RFC2544: 64, 128,
+256, 512, 1024, 1280, and 1472. I also extended the test set with a 9000-byte
+jumbo frame.
+
+**Frame Loss** starts at 100% of the link capacity, and steps down in 10%
+decrements, recording the loss percentage at each step. It stops after two
+successive steps have zero loss.
+
+**Latency** runs at the zero-loss throuhgput rate determined for each frame size
+in the throughput test, and repeats 20 times. It then reports the average jitter.
+
+**Back-to-Back** sends increasing burst sizes at line rate until drops are detected.
+It then converges on the maximium no-loss bust, and repeats 50 times.
+
+### Functional Tests
+
+Each functional test follows the same pattern: push any required config to the 
+switch via Netmiko, run the Scapy test, restore the original config, return a 
+structured pass/fail result with evidence.
+
+- **VLAN isolation** sends a tagged frame and confirms it does not arrive on a port in a different VLAN. 
+- **MAC learning** sends a burst to establish a MAC table entry, then queries the table via Netmiko 
+to confirm the entry exists on the correct port. 
+- **Jumbo frames** sends a 9000-byte frame and confirms it arrives intact. 
+- **802.1Q tagging** inspects the VLAN tag in the received frame. 
+- **STP convergence** measures restoration time after a simulated link failure. 
+- **ACL enforcement** pushes a test ACL, verifies traffic is blocked, then removes it and verifies traffic is restored.
+
+### Telemetry
+
+The 3750 does not support NETCONF/RESTCONF, so I used SNMP to poll the switch statistics.
+The Pyhon library easysnmp helped make that process pretty easy. The telemetry metrics that
+were useful were TX/RX packet counts, ensuring that tests like VLAN isolation were performing
+correctly. For MAC learning, I just used netmiko to make MAC table queries, and then
+parsed the output.
+
+
+## Results
+
+The throughput results tell the most interesting story about the 3750.
+ 
+| Frame Size | Zero-Loss Throughput | % of Link |
+|------------|---------------------|-----------|
+| 64 bytes | 15.6 Mbps | 1.56% |
+| 128 bytes | 23.4 Mbps | 2.34% |
+| 256 bytes | 58.6 Mbps | 5.86% |
+| 512 bytes | 121 Mbps | 12.1% |
+| 1024 bytes | 250 Mbps | 25.0% |
+| 1280 bytes | 175 Mbps | 17.6% |
+| 1472 bytes | 199 Mbps | 19.9% |
+| 9000 bytes | 293 Mbps | 29.3% |
+
+The 3750 is marketed as a 1G switch, and it is capable of that rate, but there
+is going to be a little bit of packet loss. The larger the frame size, the better
+the switch performed. This makes sense, because when you have smaller frames (64 bytes),
+the switch is required to make a lot more forwarding decisions, so it can slow down
+the ASIC. Furthermore, this device is pretty old (released in 2003, yikes), so I can't imagine
+that 2004 traffic patterns were generating 1.5 million forwarding decisions per second (64 bytes
+at 1G link).
+
+The frame loss curve also reinforces the story. At 64 bytes, loss begins at simple loads.
+At 1472 bytes, the switches handles 80% of line rate before dropping a frame.
+
+The functional tests all passed, except the STP convergence. I have to rethink how to perform
+that test. As is, the test starts iperf3 traffic, then does a shut/no shut on the input port,
+and waits until the traffic resumes. I configured RSTP on the switch, but didn't have time to
+debug why my code wouldn't be able to detect when the iperf stream started flowing again.
+
+## Key Takeaways
+
+Bandwidth ratings don't always tell the whole story. Sure, the 3750 can forward frames at 
+1G speed, but for average frame sizes there is going to be a lot of packet loss, especially
+for smaller frame sizes. The gap between rated bandwidtha and true forwarding capacity
+is worth investigating, and the RFC2544 benchmarks gave me a true sense of that.
+
+Framework architecture matters just as much as the tests. This could have been done manually,
+but it doesn't scale, and wouldn't be vendor agnostic. In a real test production environment,
+the automation driven approach, automatic telemetry correlation, and automated test report
+generation are much more feasible. A production technician can now crank through device 
+verification with minimal effort.
+
+The automatic report generation was a really fun feature to add, and it gives good context
+for the operator who is running the test. You can easily modify the pass/fail criteria,
+iterate on the code, and then pass this off to the production floor.
+
+If I were to spend more time, I would flush this out to make it more vendor agnostic,
+and I would also add live test feedback. This could use Grafana and some kind of real
+time database in which the results are stored as the test is running. This way an operator
+or engineer who is debugging could have live updates on how the tests are performing.
+
+---
+ 
+*Full source code at [Github](https://github.com/jgpentz/switch-test-framework)*
+
+*Live test report at [Test Report](/switch-test-framework/switch-test-report.html)*
+
+*Add me on [Linkedin](https://www.linkedin.com/in/jimmypentz/)*

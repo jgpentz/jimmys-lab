@@ -15,7 +15,7 @@ export function ProjectCard({ project }: { project: ProjectMeta }) {
           <h2 className="text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
             {project.title}
           </h2>
-          <ArrowUpRight className="mt-1 h-4 w-4 text-[var(--color-foreground-muted)] transition group-hover:text-[var(--color-accent)]" />
+          <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-[var(--color-foreground-muted)] transition group-hover:text-[var(--color-accent)]" />
         </div>
 
         <p className="line-clamp-2 text-sm leading-6 text-[var(--color-foreground-muted)]">

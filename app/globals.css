@@ -92,3 +92,18 @@ pre[data-theme] [data-line] span {
 .dark pre[data-theme] [data-line] span {
   color: var(--shiki-dark);
 }
+
+.mdx-external-link {
+  border-bottom: 2px dashed #000;
+  color: var(--color-foreground);
+  padding-bottom: 1px;
+  transition: color 150ms ease;
+}
+
+.mdx-external-link:hover {
+  color: var(--color-accent);
+}
+
+.dark .mdx-external-link {
+  border-bottom-color: #fff;
+}
