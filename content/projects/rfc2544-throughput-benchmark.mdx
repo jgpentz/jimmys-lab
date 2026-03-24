@@ -1,0 +1,65 @@
+---
+title: "RFC2544 Throughput Benchmark"
+description: "Benchmarked forwarding throughput and loss behavior across a virtual lab fabric."
+summary: "An RFC2544-aligned validation workflow used to measure throughput ceilings, frame-loss thresholds, and latency under controlled traffic profiles."
+tags:
+  - RFC2544
+  - Benchmarking
+  - QoS
+  - Automation
+links:
+  - label: "GitHub"
+    href: "https://github.com/"
+  - label: "Configs"
+    href: "https://github.com/"
+  - label: "Diagrams"
+    href: "/topology-rfc2544.svg"
+---
+
+## Problem / Goal
+
+The lab objective was to produce a repeatable baseline for forwarding performance before and after policy changes. Rather than rely on anecdotal throughput testing, the workflow needed structured measurements that could be repeated after each platform adjustment.
+
+## Topology
+
+![RFC2544 benchmark topology](/topology-rfc2544.svg)
+
+Traffic generation and collection nodes were connected across a routed test fabric with QoS policy enabled on the egress edge. Multiple frame sizes were tested to expose differences in packet-processing overhead.
+
+## Approach
+
+- Automate each benchmark run from a fixed scenario definition.
+- Record throughput, latency, and frame loss for each frame size.
+- Export results as markdown tables that could be embedded directly into project documentation.
+
+## Implementation
+
+The traffic matrix was generated from a simple automation wrapper:
+
+```bash
+#!/usr/bin/env bash
+for frame_size in 64 128 256 512 1024 1518; do
+  ./traffic-runner \
+    --profile rfc2544 \
+    --frame-size "$frame_size" \
+    --duration 60 \
+    --output "results/${frame_size}.json"
+done
+```
+
+The raw JSON output was normalized into summary tables and charts before inclusion in the final case study.
+
+## Results
+
+| Frame Size | Throughput | Avg Latency | Frame Loss |
+| --- | ---: | ---: | ---: |
+| 64 | 7.4 Gbps | 480 us | 0.32% |
+| 256 | 9.1 Gbps | 390 us | 0.06% |
+| 512 | 9.4 Gbps | 370 us | 0.02% |
+| 1518 | 9.8 Gbps | 365 us | 0.00% |
+
+## Key Takeaways
+
+- Small frames exposed the real packet-processing limit of the fabric.
+- Automating the benchmark removed operator variance between test runs.
+- Markdown-native output made the results easy to publish alongside configs and diagrams.

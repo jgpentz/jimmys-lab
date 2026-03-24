@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #fdfdfd;
+  --color-background-elevated: #ffffff;
+  --color-background-muted: #f7f7f7;
+  --color-border: #ece9e9;
+  --color-border-strong: rgba(0, 108, 172, 0.22);
+  --color-foreground: #282728;
+  --color-foreground-muted: #6b6b6b;
+  --color-foreground-soft: #3a393a;
+  --color-accent: #006cac;
+  --color-accent-soft: rgba(0, 108, 172, 0.08);
+  --font-sans:
+    "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  --shadow-card: 0 0 0 1px rgba(40, 39, 40, 0.04), 0 10px 24px rgba(40, 39, 40, 0.04);
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: #212737;
+  --color-background-elevated: #252c3f;
+  --color-background-muted: rgba(52, 63, 96, 0.75);
+  --color-border: rgba(171, 75, 8, 0.38);
+  --color-border-strong: rgba(255, 107, 1, 0.28);
+  --color-foreground: #eaedf3;
+  --color-foreground-muted: #b5bdcc;
+  --color-foreground-soft: #d5dae4;
+  --color-accent: #ff6b01;
+  --color-accent-soft: rgba(255, 107, 1, 0.12);
+  --shadow-card: 0 0 0 1px rgba(234, 237, 243, 0.05), 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+.prose-grid {
+  display: grid;
+  gap: 1.25rem;
+}
