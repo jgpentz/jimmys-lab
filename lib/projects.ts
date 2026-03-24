@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 import matter from "gray-matter";
-import readingTime from "reading-time";
 
 const projectsDirectory = path.join(process.cwd(), "content/projects");
 
@@ -19,6 +18,7 @@ type Heading = {
 
 type ProjectFrontmatter = {
   title: string;
+  date: string;
   description: string;
   summary: string;
   tags: string[];
@@ -27,7 +27,7 @@ type ProjectFrontmatter = {
 
 export type ProjectMeta = ProjectFrontmatter & {
   slug: string;
-  readingTime: string;
+  formattedDate: string;
 };
 
 export type Project = ProjectMeta & {
@@ -65,13 +65,14 @@ export function getProjectBySlug(slug: string): Project | null {
   return {
     slug,
     title: frontmatter.title,
+    date: frontmatter.date,
+    formattedDate: formatProjectDate(frontmatter.date),
     description: frontmatter.description,
     summary: frontmatter.summary,
     tags: frontmatter.tags,
     links: frontmatter.links ?? [],
     content,
-    headings: extractHeadings(content),
-    readingTime: readingTime(content).text
+    headings: extractHeadings(content)
   };
 }
 
@@ -97,4 +98,14 @@ function slugify(value: string) {
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-");
+}
+
+function formatProjectDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  })
+    .format(new Date(`${value}T00:00:00`))
+    .replace(/^(\d{2}\s\w{3})\s(\d{4})$/, "$1, $2");
 }

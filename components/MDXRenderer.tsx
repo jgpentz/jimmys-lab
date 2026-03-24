@@ -5,10 +5,14 @@ import rehypePrettyCode from "rehype-pretty-code";
 import remarkGfm from "remark-gfm";
 
 import { CodeBlock } from "@/components/CodeBlock";
+import { CodeBlockFrame } from "@/components/CodeBlockFrame";
 import { SectionHeading } from "@/components/SectionHeading";
 
 const prettyCodeOptions = {
-  theme: "github-dark"
+  theme: {
+    light: "github-light",
+    dark: "github-dark"
+  }
 };
 
 const components = {
@@ -78,10 +82,12 @@ const components = {
     return <CodeBlock {...props} />;
   },
   pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
-    <pre
-      className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[#0b1118] p-4 text-sm shadow-[var(--shadow-card)]"
-      {...props}
-    />
+    <CodeBlockFrame>
+      <pre
+        className="overflow-x-auto bg-transparent p-4 pr-20 text-sm"
+        {...props}
+      />
+    </CodeBlockFrame>
   ),
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <span className="block overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-background-elevated)]">

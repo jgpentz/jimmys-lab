@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays } from "lucide-react";
 
 import { MDXRenderer } from "@/components/MDXRenderer";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -51,10 +51,22 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-16">
       <article className="max-w-[900px] min-w-0 space-y-10">
         <header className="space-y-6 border-b border-[var(--color-border)] pb-8 pt-6">
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-2 text-sm text-[var(--color-foreground-muted)] transition-colors hover:!text-[#8a8a8a]"
+          >
+            <ArrowLeft className="h-4 w-4 transition-colors group-hover:text-[#8a8a8a]" />
+            <span className="transition-colors group-hover:text-[#8a8a8a]">Go back</span>
+          </Link>
+
           <div className="space-y-3">
             <h1 className="text-4xl font-semibold tracking-tight text-[var(--color-foreground)] sm:text-5xl">
               {project.title}
             </h1>
+            <p className="inline-flex items-center gap-2 text-sm text-[var(--color-foreground-muted)]">
+              <CalendarDays className="h-4 w-4" />
+              {project.formattedDate}
+            </p>
             <p className="max-w-3xl text-lg leading-8 text-[var(--color-foreground-muted)]">
               {project.summary}
             </p>

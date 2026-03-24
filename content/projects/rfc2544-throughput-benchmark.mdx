@@ -1,5 +1,6 @@
 ---
 title: "RFC2544 Throughput Benchmark"
+date: "2026-03-23"
 description: "Benchmarked forwarding throughput and loss behavior across a virtual lab fabric."
 summary: "An RFC2544-aligned validation workflow used to measure throughput ceilings, frame-loss thresholds, and latency under controlled traffic profiles."
 tags:
@@ -45,6 +46,19 @@ for frame_size in 64 128 256 512 1024 1518; do
     --duration 60 \
     --output "results/${frame_size}.json"
 done
+```
+
+```python
+# Function to generate a Fibonacci series up to n
+def fib(n): 
+    a, b = 0, 1
+    while a < n:
+        print(a, end=' ')
+        a, b = b, a+b
+    print()
+
+# Call the function
+fib(1000)
 ```
 
 The raw JSON output was normalized into summary tables and charts before inclusion in the final case study.

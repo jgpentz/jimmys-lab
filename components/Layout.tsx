@@ -22,7 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4 sm:px-8">
           <Link
             href="/"
-            className="text-base font-semibold tracking-tight text-[var(--color-foreground)] transition hover:text-[var(--color-accent)] sm:text-lg"
+            className="text-xl font-semibold tracking-tight text-[var(--color-foreground)] transition hover:text-[var(--color-accent)] sm:text-2xl"
           >
             Jimmy Pentz
           </Link>
@@ -39,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noreferrer" : undefined}
                     className={cn(
-                      "group rounded-full px-3 py-2 text-sm transition-colors",
+                      "group rounded-full px-3 py-2 text-base transition-colors sm:text-md",
                       "text-[var(--color-foreground-muted)] hover:!text-[var(--color-accent)]",
                       isActive && "text-[var(--color-foreground)] underline decoration-[var(--color-accent)] underline-offset-4"
                     )}

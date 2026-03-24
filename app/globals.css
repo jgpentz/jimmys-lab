@@ -66,3 +66,29 @@ a {
   display: grid;
   gap: 1.25rem;
 }
+
+pre[data-theme] {
+  background: var(--shiki-light-bg) !important;
+  color: var(--shiki-light) !important;
+}
+
+.dark pre[data-theme] {
+  background: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+
+pre[data-theme] code {
+  display: grid;
+}
+
+pre[data-theme] [data-line] {
+  display: block;
+}
+
+pre[data-theme] [data-line] span {
+  color: var(--shiki-light);
+}
+
+.dark pre[data-theme] [data-line] span {
+  color: var(--shiki-dark);
+}
