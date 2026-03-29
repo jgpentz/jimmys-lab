@@ -27,7 +27,10 @@ const components = {
     />
   ),
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p className="text-base leading-8 text-[var(--color-foreground-soft)]" {...props} />
+    <p
+      className="max-w-full break-words text-base leading-8 text-[var(--color-foreground-soft)] [overflow-wrap:anywhere]"
+      {...props}
+    />
   ),
   a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     props.href?.startsWith("http") ? (
@@ -55,10 +58,13 @@ const components = {
     <ol className="list-decimal space-y-3 pl-6 text-[var(--color-foreground-soft)]" {...props} />
   ),
   li: (props: React.LiHTMLAttributes<HTMLLIElement>) => (
-    <li className="pl-1 leading-7" {...props} />
+    <li
+      className="max-w-full break-words pl-1 leading-7 [overflow-wrap:anywhere]"
+      {...props}
+    />
   ),
   table: (props: React.TableHTMLAttributes<HTMLTableElement>) => (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)]">
+    <div className="max-w-full overflow-x-auto rounded-2xl border border-[var(--color-border)]">
       <table className="min-w-full border-collapse text-left text-sm" {...props} />
     </div>
   ),
@@ -84,13 +90,13 @@ const components = {
   pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
     <CodeBlockFrame>
       <pre
-        className="overflow-x-auto bg-transparent p-4 pr-20 text-sm"
+        className="max-w-full overflow-x-auto bg-transparent p-4 pr-20 text-sm"
         {...props}
       />
     </CodeBlockFrame>
   ),
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <span className="block overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-background-elevated)]">
+    <span className="block max-w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-background-elevated)]">
       <Image
         src={typeof props.src === "string" ? props.src : ""}
         alt={props.alt ?? ""}
@@ -104,7 +110,7 @@ const components = {
 
 export function MDXRenderer({ source }: { source: string }) {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6">
       <MDXRemote
         source={source}
         components={components}

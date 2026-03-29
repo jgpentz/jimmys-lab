@@ -23,7 +23,7 @@ export function CodeBlockFrame({ children }: CodeBlockFrameProps) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-background-muted)]">
+    <div className="relative max-w-full overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-background-muted)]">
       <button
         type="button"
         onClick={handleCopy}

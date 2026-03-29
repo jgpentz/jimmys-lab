@@ -49,7 +49,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-16">
-      <article className="max-w-[900px] min-w-0 space-y-10">
+      <article className="max-w-[900px] min-w-0 max-w-full space-y-10">
         <header className="space-y-6 border-b border-[var(--color-border)] pb-8 pt-6">
           <Link
             href="/"

@@ -65,6 +65,7 @@ a {
 .prose-grid {
   display: grid;
   gap: 1.25rem;
+  min-width: 0;
 }
 
 pre[data-theme] {
@@ -96,6 +97,7 @@ pre[data-theme] [data-line] span {
 .mdx-external-link {
   border-bottom: 2px dashed #000;
   color: var(--color-foreground);
+  overflow-wrap: anywhere;
   padding-bottom: 1px;
   transition: color 150ms ease;
 }
