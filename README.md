@@ -12,7 +12,7 @@ Static-exportable Next.js portfolio for publishing network engineering lab case 
 
 ## Local Development
 
-This project uses Node through `nvm` on your machine.
+This project uses Node through `nvm`.
 
 Load Node:
 
@@ -372,17 +372,6 @@ Change project page layout:
 Change MDX rendering styles:
 
 - Edit [components/MDXRenderer.tsx](/Users/jamespentz/Documents/New%20project/components/MDXRenderer.tsx)
-
-## Recommended Workflow For New Content
-
-1. Duplicate an existing `.mdx` file in `content/projects/`
-2. Rename it to the new slug
-3. Update frontmatter
-4. Replace the sample sections with your real content
-5. Add diagrams or screenshots to `public/`
-6. Run `npm run dev`
-7. Verify homepage card, tags, links, TOC, code blocks, and images
-8. Run `npm run build` before deploying
 
 ## Notes
 
