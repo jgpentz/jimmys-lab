@@ -1,0 +1,118 @@
+---
+title: "SONiC network stack route visibility"
+date: "2026-03-29"
+description: "A Python based terminal application that provides visibility into route propagation across the networking stack in SONiC"
+summary: "A Python based terminal application that provides visibility into route propagation across the networking stack in SONiC."
+tags:
+  - SONiC
+  - Tools
+  - Python
+  - Terminal
+links:
+  - label: "GitHub"
+    href: "https://github.com/jgpentz/switch-test-framework"
+---
+
+I just started exploring SONiC, and got a simple spine leaf topology that uses BGP built in
+ContainerLabs. I am starting to understand how FRR works, and how a route makes
+its way into both the Linux kernel routing table, and then into an ASIC forwarding
+table.
+
+To further understand the whole networking stack, I decided to build a simple terminal
+application, that reads the FRR routes, Linux kernel routes, and Redis routes, and
+then correlates if an FRR route propagates all the way through to redis, or just stays
+in the kernel.
+
+## Problem / Goal
+
+When implementing a routing protocol in FRR, how do you know if the routes in your routing table 
+are propagating all the way through to the ASIC?
+
+My simple goal for this lab, is to create a tool that lets you view all of the routes
+in the FRR routing table, and see where they propagated to in the network stack.
+
+Specifically, I wanted to be able to view this in the terminal, and navigate 
+through all of the different prefixes.
+
+## Topology
+
+The topology for this mini lab is just a simple spine leaf.
+
++------------------+   +------------------+
+|     spine-1      |   |     spine-2      |
+|   ASN 65000      |   |   ASN 65001      |
+|     SONiC        |   |     SONiC        |
++--------+---------+   +--------+---------+
+         |  \               /   |          
+         |   \             /    |          
+         |    \           /     |          
+         |     \         /      |          
+         |      \       /       |          
+         |       \     /        |          
+         |        \   /         |          
+         |         \ /          |          
+         |          \           |          
+         |         / \          |          
+         |        /   \         |          
+         |       /     \        |          
++--------+--------+    +--------+--------+ 
+|      leaf-1     |    |      leaf-2     | 
+|   ASN 65002     |    |   ASN 65003     | 
+|      SONiC      |    |      SONiC      | 
++-----------------+    +-----------------+ 
+
+## Approach
+
+I used Python with subprocess to make the appropriate docker calls into a SONiC container, and
+then I used Textual to create the terminal app.
+
+
+## Implementation
+
+I split each network stack query into a different file, so I ended up with `frr.py`, 
+`kernel.py`, and `redis.py` files, that make a subprocess call to view the installed rotues.
+
+Once I had all of the data, I had to correlate all of the routes, so I created a file that
+gathers all the data, and then reports if the route exists in that route table (FRR, Kernel, APPL_DB).
+
+The textual TUI was just vibe coded, and it ended up not even being much code, so I pretty
+easily skimmed through it. It ended up create a title bar showing the available keyboard
+commands (up down, r for refresh, q for quit). It also created two panes, the left pane
+shows all of the routes pulled from FRR routing table to navigate through, and the right panel
+displays the trace.
+
+Here is an example of the right pane:
+
+```
+Prefix: 10.10.10.3/32
+
+FRR:       ✔
+KERNEL:    ✔
+APPL_DB:   ✘
+
+Path: FRR → kernel (bypass SONiC)
+
+
+trace_route result:
+{
+  "frr": true,
+  "kernel": true,
+  "appl_db": false,
+  "path": "FRR \u2192 kernel (bypass SONiC)"
+}
+```
+
+## Key Takeaways
+
+This was a fun way for me to get more familiar with how routes are propagated through
+SONiC once they get parsed by FRR.
+
+The way that I understand it, the Zebra app will take the best routes, and install those 
+in the linux kernel route table. Then the fpmsyncd sonic daemon will see the change,
+and add that to the Redis DB. Finally OrchAgent and SAI will translate that in the ASIC
+command and install it in the FIB.
+
+
+---
+ 
+*Full source code at [Github](https://github.com/jgpentz/switch-test-framework)*
